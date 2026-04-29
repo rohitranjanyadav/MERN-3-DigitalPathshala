@@ -1,9 +1,10 @@
 require("dotenv").config();
 const express = require("express");
 const connectToDatabase = require("./database");
+const Blog = require("./model/blogModel");
 
 const app = express();
-app.use(express.json())
+app.use(express.json());
 
 connectToDatabase();
 
@@ -13,12 +14,25 @@ app.get("/", (req, res) => {
   });
 });
 
-app.post("/blog",(req,res)=>{
-  console.log(req.body)
+app.post("/blog", async (req, res) => {
+  const { title, subtitle, description, image } = req.body;
+
+  if (!title || !subtitle || !description || !image) {
+    return res.status(400).json({
+      message: "Please provide all the fields",
+    });
+  }
+
+  await Blog.create({
+    title,
+    subtitle,
+    description,
+    image,
+  });
   res.status(200).json({
-    message:"Blog API hit"
-  })
-})
+    message: "Blog API hit",
+  });
+});
 
 app.get("/about", (req, res) => {
   res.json({
