@@ -18,9 +18,10 @@ app.get("/", (req, res) => {
 });
 
 app.post("/blog", upload.single("image"), async (req, res) => {
-  const { title, subtitle, description, image } = req.body;
+  const { title, subtitle, description } = req.body;
+  const fileName = req.file.filename;
 
-  if (!title || !subtitle || !description || !image) {
+  if (!title || !subtitle || !description) {
     return res.status(400).json({
       message: "Please provide all the fields",
     });
@@ -30,18 +31,24 @@ app.post("/blog", upload.single("image"), async (req, res) => {
     title,
     subtitle,
     description,
-    image,
+    image: fileName,
   });
+
   res.status(200).json({
     message: "Blog API hit",
   });
 });
 
-app.get("/about", (req, res) => {
-  res.json({
-    message: "About page",
+app.get("/blog", async (req, res) => {
+  const blogs = await Blog.find();
+
+  res.status(200).json({
+    message: "Blogs fetched successfully",
+    data: blogs,
   });
 });
+
+app.use(express.static('./storage'))
 
 app.listen(process.env.PORT, () => {
   console.log("Server is running on port 3000");
