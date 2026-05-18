@@ -12,6 +12,8 @@ const upload = multer({ storage: storage });
 const fs = require("fs");
 const cors = require("cors");
 
+const DEFAULT_BLOG_IMAGE = "default-blog.jpg";
+
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -28,7 +30,7 @@ app.get("/", (req, res) => {
 
 app.post("/blog", upload.single("image"), async (req, res) => {
   const { title, subtitle, description } = req.body;
-  const fileName = req.file.filename;
+  const fileName = req.file ? req.file.filename : DEFAULT_BLOG_IMAGE;
 
   if (!title || !subtitle || !description) {
     return res.status(400).json({
@@ -80,13 +82,15 @@ app.delete("/blog/:id", async (req, res) => {
   const blog = await Blog.findById(id);
   const imageName = blog.image;
 
-  fs.unlink(`storage/${imageName}`, (err) => {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log("Image Deleted Successfully");
-    }
-  });
+  if (imageName !== DEFAULT_BLOG_IMAGE) {
+    fs.unlink(`storage/${imageName}`, (err) => {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log("Image Deleted Successfully");
+      }
+    });
+  }
 
   const deletedBlog = await Blog.findByIdAndDelete(id);
 
@@ -107,19 +111,27 @@ app.patch("/blog/:id", upload.single("image"), async (req, res) => {
     const blog = await Blog.findById(id);
     const oldImageName = blog.image;
 
-    fs.unlink(`storage/${oldImageName}`, (err) => {
-      if (err) {
-        console.log(err);
-      } else {
-        console.log("File Updated Successfully!");
-      }
-    });
+    if (oldImageName !== DEFAULT_BLOG_IMAGE) {
+      fs.unlink(`storage/${oldImageName}`, (err) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("File Updated Successfully!");
+        }
+      });
+    }
   }
-  await Blog.findByIdAndUpdate(id, {
+  const updatedData = {
     title: title,
     subtitle: subtitle,
     description: description,
-  });
+  };
+
+  if (imageName) {
+    updatedData.image = imageName;
+  }
+
+  await Blog.findByIdAndUpdate(id, updatedData);
 
   res.status(200).json({
     message: "Blog Updated Successfully!",
